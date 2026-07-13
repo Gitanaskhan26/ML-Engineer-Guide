@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7/dist/fuse.min.js"></script>
 <style>
 :root {
   --bg: #ffffff;
@@ -32,6 +33,7 @@
   --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
   --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
   --sidebar-w: 280px;
+  --font-base: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -61,7 +63,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: var(--font);
-  font-size: 16px;
+  font-size: var(--font-base);
   line-height: 1.7;
   color: var(--text);
   background: var(--bg);
@@ -178,6 +180,161 @@ body {
 }
 .sidebar nav .toc-l1 { padding-left: 16px; }
 .sidebar nav .toc-l2 { padding-left: 28px; font-size: 12px; }
+
+/* Search */
+#search-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+#search-input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+  outline: none;
+  transition: border 0.2s;
+}
+#search-input:focus { border-color: var(--accent); }
+#search-wrap::before {
+  content: "🔍";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  pointer-events: none;
+}
+#search-results {
+  max-height: 0;
+  overflow-y: auto;
+  transition: max-height 0.3s;
+}
+#search-results.has-results { max-height: 50vh; }
+#search-results a {
+  padding: 6px 8px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+#search-results a:last-child { border-bottom: none; }
+#search-results .search-match {
+  background: rgba(37,99,235,0.15);
+  font-weight: 600;
+}
+
+/* Back to top */
+#back-to-top {
+  position: fixed;
+  bottom: 76px;
+  right: 24px;
+  z-index: 999;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, background 0.3s;
+}
+#back-to-top.visible { opacity: 1; pointer-events: auto; }
+#back-to-top:hover { background: var(--bg-alt); }
+
+/* Font size controls */
+#font-controls {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+#font-controls button {
+  flex: 1;
+  padding: 4px 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#font-controls button:hover { background: var(--bg-alt); }
+
+/* Heading anchor links */
+.anchor-link {
+  opacity: 0;
+  margin-left: 6px;
+  font-size: 0.8em;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+h1:hover .anchor-link,
+h2:hover .anchor-link,
+h3:hover .anchor-link,
+h4:hover .anchor-link { opacity: 1; }
+.anchor-link:hover { color: var(--accent); text-decoration: none; }
+
+/* Quiz */
+.quiz-block {
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 24px 0;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+.quiz-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.quiz-q {
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--bg-alt);
+}
+.quiz-q p { margin: 0 0 8px 0; font-weight: 600; }
+.quiz-q label {
+  display: block;
+  padding: 4px 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+.quiz-q label:hover { color: var(--accent); }
+.quiz-reveal {
+  margin-top: 12px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.quiz-reveal:hover { opacity: 0.9; }
+.quiz-answer {
+  display: none;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--green);
+  background: var(--green-light);
+  border-radius: 0 4px 4px 0;
+  font-size: 13px;
+}
+.quiz-answer.show { display: block; }
 
 /* Main content */
 .main-content {
@@ -614,7 +771,7 @@ a.cite { color: var(--text); text-decoration: none; vertical-align: super; font-
 
 /* Print styles */
 @media print {
-  .sidebar, #theme-toggle, #menu-toggle, #progress-bar, .sidebar-overlay, .copy-btn {
+  .sidebar, #theme-toggle, #menu-toggle, #progress-bar, .sidebar-overlay, .copy-btn, #back-to-top, #font-controls, #search-wrap, .anchor-link, .quiz-block {
     display: none !important;
   }
   .main-content { max-width: none; padding: 0; }
@@ -628,6 +785,7 @@ a.cite { color: var(--text); text-decoration: none; vertical-align: super; font-
 
 <div id="progress-bar"></div>
 <button id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+<button id="back-to-top" aria-label="Scroll to top">↑</button>
 <button id="menu-toggle" aria-label="Toggle navigation">☰</button>
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
@@ -635,6 +793,15 @@ a.cite { color: var(--text); text-decoration: none; vertical-align: super; font-
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-title">Contents</div>
+  <div id="font-controls">
+    <button data-size="14">A−</button>
+    <button data-size="16" class="active">A</button>
+    <button data-size="18">A+</button>
+  </div>
+  <div id="search-wrap">
+    <input id="search-input" type="text" placeholder="Search..." autocomplete="off">
+  </div>
+  <div id="search-results"></div>
   <nav id="sidebar-nav">
     <!-- Populated by JavaScript -->
   </nav>
@@ -822,6 +989,39 @@ This part orients you to the guide's structure, the landscape of ML careers, and
 <li><strong>Library Implementation</strong> - Production-ready code with scikit-learn or PyTorch</li>
 <li><strong>Exercises and Interview Questions</strong> - Practice problems</li>
 </ol>
+
+<div class="quiz-block">
+<div class="quiz-title">Self-Check Quiz — Chapter 1</div>
+<div class="quiz-q">
+<p>1. What is the first step in the professional ML lifecycle?</p>
+<label><input type="radio" name="q1" value="a"> Collect data</label>
+<label><input type="radio" name="q1" value="b"> Define the business or research problem</label>
+<label><input type="radio" name="q1" value="c"> Train a model</label>
+<label><input type="radio" name="q1" value="d"> Deploy to production</label>
+<div class="quiz-answer"><strong>Answer:</strong> b — Define the business or research problem. The ML lifecycle starts with understanding what decision the model supports, not with data collection.</div>
+</div>
+<div class="quiz-q">
+<p>2. Which priority label should you study first?</p>
+<label><input type="radio" name="q2" value="a"> Research Frontier</label>
+<label><input type="radio" name="q2" value="b"> Specialization</label>
+<label><input type="radio" name="q2" value="c"> Required</label>
+<label><input type="radio" name="q2" value="d"> Recommended</label>
+<div class="quiz-answer"><strong>Answer:</strong> c — Required content should be studied first, before any specialization.</div>
+</div>
+<div class="quiz-q">
+<p>3. Which learning route is best for someone targeting an MLOps-focused role?</p>
+<label><input type="radio" name="q3" value="a"> Foundation Route</label>
+<label><input type="radio" name="q3" value="b"> ML Engineer Route</label>
+<label><input type="radio" name="q3" value="c"> Research Route</label>
+<label><input type="radio" name="q3" value="d"> Any route works equally</label>
+<div class="quiz-answer"><strong>Answer:</strong> b — The ML Engineer Route focuses on data pipelines, MLOps, deployment, and testing.</div>
+</div>
+<button class="quiz-reveal">Show Answers</button>
+</div>
+
+<div class="tip-box">
+<strong>Further Reading:</strong> For a deeper treatment of ML production workflows, see Sculley et al., "Hidden Technical Debt in Machine Learning Systems" (NeurIPS 2015) and Google's "Rules of ML" (developer.google.com). For career path advice, read "Building a Career in AI" by Carlos E. Perez and "The ML Engineering Handbook" by Andriy Burkov.
+</div>
 
 <div class="page-break"></div>
 
@@ -1315,6 +1515,10 @@ def validate_features(X, expected_dim=None):
 <li>Debug this code: <code>[(x - mean(x)) / std(x) for x in data]</code> — what goes wrong?</li>
 <li>Parse a JSON config file, validate required fields (learning_rate, batch_size, epochs), and raise descriptive errors for missing fields.</li>
 </ol>
+</div>
+
+<div class="tip-box">
+<strong>Further Reading:</strong> For a deeper Python-for-ML reference, see "Python for Data Analysis" by Wes McKinney (creator of pandas). For type hints, read the official Python typing docs (docs.python.org/library/typing). For code style, the Google Python Style Guide is widely adopted across ML teams.
 </div>
 
 <div class="page-break"></div>
@@ -2433,7 +2637,7 @@ GROUP BY t.user_id, u.signup_date, u.country;</code></pre>
 <strong>Critical Rule:</strong> Every feature in an SQL feature table must use only data available <strong>before</strong> the prediction timestamp. Using future data (even accidentally via JOINs) creates target leakage and gives unrealistically high validation metrics.
 </div>
 
-<h3>11.1b Timestamp-Bounded Joins: Preventing Temporal Leakage</h3>
+<h3>11.1b Timestamp-Bounded Joins: Preventing Temporal Leakage <span class="label label-advanced">Advanced</span></h3>
 
 <p>The single most common way interns cause production incidents is a plain JOIN that silently pulls in a row from <em>after</em> the event they're trying to predict. A naive join like <code>transactions JOIN accounts ON transactions.account_id = accounts.account_id</code> attaches whatever the <em>current</em> account row looks like — including balance or status fields that were only updated after the transaction happened. In training, this leaks the future into the features; in production, that future data doesn't exist yet, so the model silently degrades.</p>
 
@@ -2626,7 +2830,7 @@ $$\mathbf{A}\mathbf{v} = \lambda \mathbf{v}$$
 
     return X_reduced, eigenvalues[:n_components], components</code></pre>
 
-<h3>12.5 Singular Value Decomposition (SVD)</h3>
+<h3>12.5 Singular Value Decomposition (SVD) <span class="label label-advanced">Advanced</span></h3>
 
 <p>SVD factorizes any matrix into three components:</p>
 
@@ -2741,7 +2945,7 @@ $$\hat{y} = f_2(\mathbf{W}_2 \cdot f_1(\mathbf{W}_1 \mathbf{x}))$$
 $$\frac{\partial L}{\partial \mathbf{W}_1} = \frac{\partial L}{\partial \hat{y}} \cdot \frac{\partial \hat{y}}{\partial \mathbf{z}_2} \cdot \frac{\partial \mathbf{z}_2}{\partial \mathbf{h}} \cdot \frac{\partial \mathbf{h}}{\partial \mathbf{z}_1} \cdot \frac{\partial \mathbf{z}_1}{\partial \mathbf{W}_1}$$
 </div>
 
-<h3>13.4 Modern Optimizers</h3>
+<h3>13.4 Modern Optimizers <span class="label label-intermediate">Intermediate</span></h3>
 
 <table>
 <caption data-label="Table 13-1">Optimizer Comparison</caption>
@@ -3279,7 +3483,7 @@ calibrated.fit(X_train, y_train)</code></pre>
 </ul>
 </div>
 
-<h3>20.1 Leakage Taxonomy</h3>
+<h3>20.1 Leakage Taxonomy <span class="label label-intermediate">Intermediate</span></h3>
 
 <table>
 <caption data-label="Table 20-1">Types of Data Leakage in ML</caption>
@@ -3455,6 +3659,55 @@ model.fit(X_train, y_train)  # Preprocessing fit on train only!</code></pre>
 <h3>22.3 Model Cards</h3>
 
 <p>A model card documents: model purpose, intended use, out-of-scope uses, training data, performance metrics (overall and by subgroup), environmental cost, ethical considerations, limitations, version, and date.</p>
+
+<h3>22.4 ML Governance and Compliance</h3>
+
+<p>As ML systems become regulated (EU AI Act, NYC Local Law 144, FDA guidelines for SaMD), governance is no longer optional. A governance framework typically includes:</p>
+
+<table>
+<caption data-label="Table 22-1">ML Governance Framework Components</caption>
+<thead><tr><th>Component</th><th>Description</th><th>Tooling / Practice</th></tr></thead>
+<tbody>
+<tr><td><strong>Model Registry</strong></td><td>Centralized catalog of all models with versioning, metadata, approval status</td><td>MLflow Model Registry, SageMaker Model Registry, W&B Model Registry</td></tr>
+<tr><td><strong>Approval Gates</strong></td><td>Staged review process before a model reaches production (staging → canary → prod)</td><td>CI/CD pipelines with manual approval steps; documented sign-offs</td></tr>
+<tr><td><strong>Bias Audits</strong></td><td>Pre-deployment and periodic fairness evaluations across demographic groups</td><td>AIF360, Fairlearn, What-If Tool; documented in model cards</td></tr>
+<tr><td><strong>Explainability Records</strong></td><td>Stored explanations for a sample of predictions for auditability</td><td>SHAP/LIME outputs logged alongside predictions (see Ch. 38)</td></tr>
+<tr><td><strong>Data Lineage</strong></td><td>End-to-end provenance tracking from raw data to feature values</td><td>Data versioning (DVC, LakeFS); column-level lineage in data warehouses</td></tr>
+<tr><td><strong>Incident Logging</strong></td><td>Structured logging of model failures, drift events, and remediation actions</td><td>Integrated with monitoring (Ch. 44); post-mortem culture</td></tr>
+<tr><td><strong>Compliance Documentation</strong></td><td>Automatically generated compliance reports for regulators</td><td>Model cards + metadata export; audit trail from CI/CD + model registry</td></tr>
+</tbody>
+</table>
+
+<div class="danger-box">
+<strong>Regulatory Alert — EU AI Act (2024):</strong> If you deploy ML systems in the EU, the AI Act classifies systems into risk levels (minimal, limited, high, unacceptable). High-risk systems (credit scoring, HR decisions, medical devices) require conformity assessments, human oversight, transparency obligations, and accuracy/robustness reporting. Fines can reach 35M EUR or 7% of global annual turnover. Start building governance infrastructure now — retrofitting it after a product is live is significantly more expensive.
+</div>
+
+<div class="tip-box">
+<strong>Further Reading:</strong> For compliance frameworks, see "The EU AI Act: A Practical Guide" (Future of Life Institute) and the NIST AI Risk Management Framework. For governance tooling, read the MLflow Model Registry docs and "Software Engineering for Machine Learning" (Amershi et al., 2019, ICSE).
+</div>
+
+<h3>22.5 AI Security <span class="label label-advanced">Advanced</span></h3>
+
+<p>ML models introduce unique attack surfaces beyond traditional software vulnerabilities. Understanding these is critical for production deployments:</p>
+
+<table>
+<caption data-label="Table 22-2">AI Security Threats and Mitigations</caption>
+<thead><tr><th>Threat</th><th>Description</th><th>Attack Vector</th><th>Mitigation</th></tr></thead>
+<tbody>
+<tr><td><strong>Adversarial examples</strong></td><td>Small, imperceptible input perturbations cause misclassification</td><td>Input API; crafted with gradient-based optimization (FGSM, PGD)</td><td>Adversarial training (include adversarial examples in training data); input preprocessing (smoothing, JPEG compression); certified defenses (randomized smoothing)</td></tr>
+<tr><td><strong>Model extraction</strong></td><td>Attacker queries the model to steal its functionality via surrogate model training</td><td>Public prediction API</td><td>Rate limiting, differential privacy in predictions, output perturbation, watermarking model outputs</td></tr>
+<tr><td><strong>Data poisoning</strong></td><td>Maliciously crafted training data corrupts model behavior (e.g., backdoor triggers)</td><td>Training pipeline; unvalidated data sources</td><td>Data provenance tracking, outlier detection in training data, robust aggregation (trimmed mean, median), differential private training</td></tr>
+<tr><td><strong>Prompt injection</strong></td><td>LLM-specific: adversarial input overrides system prompt, causing unintended behavior</td><td>LLM chat API; indirect injection via retrieved documents</td><td>Input sanitization, output filtering, prompt hardening, least-privilege system prompts, human-in-the-loop for sensitive actions</td></tr>
+<tr><td><strong>Membership inference</strong></td><td>Determine if a specific data point was in the training set</td><td>Confidence scores from model API</td><td>Differential privacy, restrict output granularity, regularize model to reduce overfitting</td></tr>
+</tbody>
+</table>
+
+<div class="warn-box">
+<strong>Key insight:</strong> Most AI security vulnerabilities exploit the model's differentiability or overconfidence — the same properties that make gradient-based training effective. A model that outputs well-calibrated probabilities with low confidence is inherently harder to attack, which means that calibration (Ch. 19) and robustness (Ch. 20) are not just quality concerns but <em>security controls</em>.
+</div>
+
+<div class="tip-box">
+<strong>Further Reading:</strong> For a comprehensive treatment, see "The Security of Machine Learning" (Barreno et al., 2010) and the OWASP AI Security and Privacy Guide. For adversarial examples, read "Explaining and Harnessing Adversarial Examples" (Goodfellow et al., 2015). For LLM-specific threats, see OWASP's "Top 10 for LLM Applications" and "Prompt Injection: A New Attack Vector" (Greshake et al., 2023).</div>
 
 <div class="page-break"></div>
 
@@ -3700,6 +3953,10 @@ mnb.fit(X_train_counts, y_train)</code></pre>
 <p><strong>Weaknesses:</strong> Independence assumption is rarely true; zero probabilities without smoothing; not suitable for regression.</p>
 </div>
 
+<div class="tip-box">
+<strong>Further Reading:</strong> For a deep dive into supervised learning theory, see "The Elements of Statistical Learning" (Hastie, Tibshirani, Friedman) — Chapters 3 (linear methods), 4 (classification), and 12 (SVMs). For practical scikit-learn usage, the official documentation's "Choosing the Right Estimator" flowchart is invaluable. For regularization theory, read "Statistical Learning with Sparsity: The Lasso and Generalizations" (Hastie, Tibshirani, Wainwright).
+</div>
+
 <div class="page-break"></div>
 
 <h2 id="ch24">Chapter 24: Trees and Ensemble Learning</h2>
@@ -3793,7 +4050,7 @@ perm_importance = pd.DataFrame({
 <p><strong>Strengths:</strong> Excellent baseline for tabular data, handles mixed types, robust to outliers, provides feature importance, parallelizable.</p>
 </div>
 
-<h3>24.3 Gradient Boosting</h3>
+<h3>24.3 Gradient Boosting <span class="label label-intermediate">Intermediate</span></h3>
 
 <figure>
 <img loading="lazy" src="https://upload.wikimedia.org/wikipedia/commons/8/88/Ensemble_learning.png" alt="Ensemble learning: multiple weak learners are combined sequentially, with each new tree fitting the residual errors of the combined ensemble so far, progressively improving the overall prediction boundary." style="max-width:100%; height:auto; display:block; margin:0 auto;">
@@ -4090,18 +4347,31 @@ print(f"Total variance retained: {sum(pca.explained_variance_ratio_):.2%}")</cod
 </tbody>
 </table>
 
-<h3>27.4 Time-Series Baselines</h3>
+<h3>27.4 Time-Series Baselines and Forecasting <span class="label label-intermediate">Intermediate</span></h3>
 
 <p>Before applying complex time-series models, establish baselines:</p>
 <ul>
-<li><strong>Naive:</strong> Tomorrow = Today</li>
-<li><strong>Seasonal naive:</strong> This Monday = Last Monday</li>
-<li><strong>Moving average:</strong> Smooth over past $k$ periods</li>
-<li><strong>Exponential smoothing:</strong> Weighted average with decay</li>
+<li><strong>Naive:</strong> Tomorrow = Today. Surprising effective for random-walk-like series (stock prices).</li>
+<li><strong>Seasonal naive:</strong> This Monday = Last Monday. Best for data with strong periodic patterns.</li>
+<li><strong>Moving average:</strong> Smooth over past $k$ periods. Parameter $k$ controls smoothness.</li>
+<li><strong>Exponential smoothing:</strong> Weighted average with exponential decay. Single parameter $\alpha$ controls decay rate.</li>
 </ul>
 
+<p>For production forecasting beyond baselines, two approaches dominate:</p>
+
+<table>
+<caption data-label="Table 27-2">Modern Time-Series Forecasting Methods</caption>
+<thead><tr><th>Method</th><th>Approach</th><th>Strengths</th><th>Weaknesses</th></tr></thead>
+<tbody>
+<tr><td><strong>ARIMA/SARIMA</strong></td><td>AutoRegressive Integrated Moving Average with seasonal extension</td><td>Interpretable, well-understood statistics; good for univariate series with clear seasonality</td><td>Requires manual parameter selection (p,d,q); struggles with multiple seasonalities and external regressors</td></tr>
+<tr><td><strong>Prophet (Meta)</strong></td><td>Decomposable additive model: trend + seasonality + holidays + regressors</td><td>Handles missing data, outliers, and multiple seasonalities automatically; human-interpretable changepoints</td><td>Assumes additive seasonality; less accurate for very long-range forecasts compared to deep learning</td></tr>
+<tr><td><strong>LightGBM with lag features</strong></td><td>Gradient boosting with engineered time features (lag, rolling stats, time-of-day/day-of-week dummies)</td><td>Handles high-dimensional features and external regressors; fast training; strong empirical performance (won many M5 competition tasks)</td><td>No built-in temporal structure; requires careful feature engineering; extrapolation beyond training range is unreliable</td></tr>
+<tr><td><strong>Temporal Fusion Transformer (TFT)</strong></td><td>Attention-based architecture with gating, variable selection, and quantile outputs</td><td>State-of-the-art accuracy; interpretable via attention weights; handles multiple time series jointly; produces prediction intervals natively</td><td>High compute cost; many hyperparameters; large data requirements</td></tr>
+</tbody>
+</table>
+
 <div class="warn-box">
-<strong>Temporal Validation Rule:</strong> Never use random train/test split for time series. Always split by time: train on older data, test on newer data. Use rolling window or expanding window validation.
+<strong>Temporal Validation Rule:</strong> Never use random train/test split for time series. Always split by time: train on older data, test on newer data. Use rolling window or expanding window validation (see Ch. 18). The M4/M5 forecasting competitions showed that hybrid methods (statistical + ML) consistently outperform pure approaches.
 </div>
 
 <div class="page-break"></div>
@@ -4174,7 +4444,7 @@ class QLearningAgent:
         td_error = td_target - self.q_table[state, action]
         self.q_table[state, action] += self.lr * td_error</code></pre>
 
-<h3>28.3 Deep RL and Policy Gradients</h3>
+<h3>28.3 Deep RL and Policy Gradients <span class="label label-advanced">Advanced</span></h3>
 
 <p><strong>DQN:</strong> Use neural network to approximate Q-function. Key innovations: experience replay, target network.</p>
 
@@ -4569,7 +4839,7 @@ resnet.fc = nn.Linear(resnet.fc.in_features, num_classes)
 
 <p><strong>Figure 32-0: The full Transformer architecture</strong> (after Vaswani et al., "Attention Is All You Need", 2017). The encoder (left) processes the input sequence through N identical blocks, each containing multi-head self-attention followed by a feed-forward network, with residual connections and layer normalization around each sub-layer. The decoder (right) adds a cross-attention sub-layer that attends to the encoder's output: the encoder's final representations become the Keys and Values, while the decoder's self-attention output provides the Queries. The decoder's first self-attention is <em>masked</em> to prevent attending to future positions, enforcing left-to-right (causal) generation. The final linear projection and softmax produce a probability distribution over the output vocabulary at each position. Modern decoder-only models (GPT, LLaMA) drop the encoder entirely and use only the masked self-attention stack; encoder-only models (BERT) drop the decoder and use bidirectional (unmasked) self-attention.</p>
 
-<h3>32.2 Self-Attention Mechanism</h3>
+<h3>32.2 Self-Attention Mechanism <span class="label label-advanced">Advanced</span></h3>
 
 <div class="info-box">
 <strong>The database / search-engine analogy.</strong> Before the formula, think of self-attention as a soft lookup in a search engine. Every token produces three vectors from its embedding: a <strong>Query</strong> ("what am I looking for?"), a <strong>Key</strong> ("what do I have to offer, as a searchable label?"), and a <strong>Value</strong> ("what content do I actually contain?"). To decide what a token should pay attention to, you compare its Query against every other token's Key — like typing a search query and matching it against article titles. Tokens whose Keys match well get a high score; that score, after softmax, becomes a weight. The output is a weighted blend of every token's Value, weighted by how well its Key matched the Query — like retrieving a mix of article contents, more from the best-matching articles and less from the rest.</p>
@@ -4666,6 +4936,10 @@ prompt = f"Answer using only this context:\n{context}\n\nQuestion: {user_query}"
 <li><strong>Evaluation:</strong> Perplexity, task-specific accuracy, human evaluation, safety benchmarks.</li>
 <li><strong>Quantization:</strong> Reduce precision (FP16, INT8, INT4) for deployment. Trade-off: speed vs. quality.</li>
 </ul>
+
+<div class="tip-box">
+<strong>Further Reading:</strong> For the original transformer paper, read "Attention is All You Need" (Vaswani et al., 2017). For modern LLM engineering, see "LLM Engineer's Handbook" (AlphaSignal) and the HuggingFace NLP Course (huggingface.co/learn/nlp-course). For RAG patterns, see "Retrieval-Augmented Generation for Large Language Models: A Survey" (Gao et al., 2023). For LLM safety, read the "Anthropic Responsible Scaling Policy" and "OpenAI Safety Best Practices".
+</div>
 
 <div class="page-break"></div>
 
@@ -4825,6 +5099,45 @@ for batch_x, batch_y in dataloader:
 <li><strong>FSDP:</strong> Fully Sharded Data Parallel. Shards model parameters across GPUs. Used for large models.</li>
 </ul>
 
+<h3>35.4 Model Compression</h3>
+
+<p>Deploying large models under latency, memory, and cost constraints often requires compression. Four main techniques exist, and they can be combined:</p>
+
+<table>
+<caption data-label="Table 35-2">Model Compression Techniques</caption>
+<thead><tr><th>Technique</th><th>How It Works</th><th>Compression</th><th>Accuracy Impact</th><th>Use Case</th></tr></thead>
+<tbody>
+<tr><td><strong>Quantization</strong></td><td>Reduce precision of weights/activations (FP32→INT8)</td><td>4× memory, ~2× speed</td><td>Minimal with PTQ; near-zero with QAT</td><td>Edge deployment, GPU inference, LLM serving</td></tr>
+<tr><td><strong>Pruning</strong></td><td>Remove redundant weights or neurons</td><td>2–10× size reduction</td><td>Tunable via sparsity schedule</td><td>Mobile models, overparameterized nets</td></tr>
+<tr><td><strong>Knowledge Distillation</strong></td><td>Train a small "student" model to mimic a large "teacher"</td><td>10–100× size reduction</td><td>Depends on task difficulty; often surprisingly good</td><td>Productionizing large models, model ensembles</td></tr>
+<tr><td><strong>ONNX Runtime</strong></td><td>Cross-platform optimizer + executor for trained models</td><td>1.5–3× speedup</td><td>None (numerically equivalent)</td><td>Cross-platform deployment, inference optimization</td></tr>
+</tbody>
+</table>
+
+<div class="warn-box">
+<strong>Practical Tip:</strong> Always evaluate compressed models on your full validation suite — quantization can produce silent accuracy regressions on edge cases that are invisible in aggregate metrics. Use <code>torch.ao.quantization</code> for PyTorch-native quantization-aware training (QAT) when post-training quantization (PTQ) degrades accuracy too much.
+</div>
+
+<pre><code># Post-training dynamic quantization (PTQ) — simplest path
+import torch
+
+model = torch.load("model_fp32.pth")
+model_quantized = torch.quantization.quantize_dynamic(
+    model, {torch.nn.Linear}, dtype=torch.qint8
+)
+torch.save(model_quantized.state_dict(), "model_int8.pt")
+
+# Quantization-aware training (QAT) — when PTQ hurts accuracy
+model.qconfig = torch.quantization.get_default_qat_qconfig("fbgemm")
+torch.quantization.prepare_qat(model, inplace=True)
+# train normally ...
+torch.quantization.convert(model, inplace=True)
+torch.save(model.state_dict(), "model_qat.pt")</code></pre>
+
+<div class="tip-box">
+<strong>Further Reading:</strong> For a comprehensive survey, see "A Survey of Model Compression and Acceleration for Deep Neural Networks" (Cheng et al., 2017). For production quantization, read the PyTorch Quantization docs and the NVIDIA TensorRT documentation. For distillation, see "Distilling the Knowledge in a Neural Network" (Hinton et al., 2015).
+</div>
+
 <div class="page-break"></div>
 
 
@@ -4862,7 +5175,7 @@ This part covers cutting-edge topics: generative models, causal inference, expla
 </tbody>
 </table>
 
-<h3>36.2 Diffusion Models</h3>
+<h3>36.2 Diffusion Models <span class="label label-advanced">Advanced</span></h3>
 
 <figure>
 <img loading="lazy" src="https://upload.wikimedia.org/wikipedia/commons/5/57/Example_of_Forward_Diffusion_Models.png" alt="Forward diffusion process: a clean image is gradually corrupted by adding Gaussian noise over T timesteps until it becomes unrecognizable pure noise. The reverse denoising process (not shown) learns to iteratively remove this noise, recovering a clean generated image from pure noise.">
@@ -4928,6 +5241,58 @@ $$p_\theta(x_{t-1} | x_t) = \mathcal{N}(x_{t-1}; \mu_\theta(x_t, t), \Sigma_\the
     idx = torch.multinomial(sorted_probs, 1)
     return sorted_indices[idx]</code></pre>
 
+<h3>36.3b Reinforcement Learning from Human Feedback (RLHF) <span class="label label-advanced">Advanced</span></h3>
+
+<p>RLHF is the technique that aligns large language models with human preferences — it is what makes ChatGPT helpful and harmless rather than a raw next-token predictor. It proceeds in three stages:</p>
+
+<ol>
+<li><strong>Supervised fine-tuning (SFT):</strong> Fine-tune the pretrained model on high-quality demonstrations (human-written ideal responses). This teaches the model the desired <em>format</em> and <em>style</em> of responses.</li>
+<li><strong>Reward model training:</strong> Collect human comparisons (response A is better than response B for the same prompt). Train a separate reward model $R_\phi(x, y)$ to predict human preference. This is a binary classification task: $R_\phi$ scores responses, and the loss is the log-likelihood of the observed preferences.</li>
+<li><strong>Policy optimization (PPO):</strong> Optimize the language model (now called the policy $\pi_\theta$) to maximize the reward model's score while staying close to the SFT model via a KL penalty: $\text{objective} = \mathbb{E}[R_\phi(x, y)] - \beta \cdot D_{KL}(\pi_\theta \parallel \pi_{SFT})$. The KL penalty prevents the model from exploiting the reward model by generating degenerate text that scores artificially high.</li>
+</ol>
+
+<div class="warn-box">
+<strong>Why PPO and not naive gradient ascent?</strong> The reward model is a static classifier — if you just maximize its score directly, the policy quickly learns to generate nonsense that triggers high reward scores (reward hacking). PPO with the KL penalty constrains the policy to remain in-distribution for the reward model. This tension between <em>reward optimization</em> and <em>KL regularization</em> is the core engineering challenge: set $\beta$ too high and the model barely improves; set it too low and reward hacking emerges.
+</div>
+
+<pre><code># Pseudocode for one PPO update in RLHF
+# r: reward from reward model, kl: KL divergence from SFT model
+# advantages = (r - r_baseline) normalized
+# π_θ: current policy, π_old: frozen policy from previous iteration
+
+# Importance-sampled policy gradient with clipping (PPO-clip)
+ratio = π_θ(action | state) / π_old(action | state)
+clipped = clamp(ratio, 1 - ε, 1 + ε)
+loss = -min(ratio * advantage, clipped * advantage) + β * kl
+
+# The KL penalty can also be implemented adaptively:
+# target_kl = 0.02  # heuristic
+# if kl > 1.5 * target_kl → β *= 1.2  (strengthen penalty)
+# if kl < 0.5 * target_kl → β /= 1.2  (weaken penalty)</code></pre>
+
+<div class="tip-box">
+<strong>Key reference:</strong> The original RLHF paper is "Training Language Models to Follow Instructions with Human Feedback" (Ouyang et al., 2022) — the InstructGPT paper. For a practical implementation guide, see the TRL library (HuggingFace) and the "RLHF Book" by Nathan Lambert.
+</div>
+
+<h3>36.3c Multi-Modal Models <span class="label label-advanced">Advanced</span></h3>
+
+<p>Multi-modal models process and generate across modalities — text, images, audio, video — jointly. Key architectures:</p>
+
+<table>
+<caption data-label="Table 36-2">Multi-Modal Model Architectures</caption>
+<thead><tr><th>Model</th><th>Input</th><th>Output</th><th>Approach</th></tr></thead>
+<tbody>
+<tr><td><strong>CLIP</strong></td><td>Image + Text</td><td>Similarity score</td><td>Contrastive learning: image and text encoders trained to produce aligned embeddings via InfoNCE loss. Zero-shot classification by comparing image embeddings to text prompts.</td></tr>
+<tr><td><strong>DALL-E 3 / Imagen</strong></td><td>Text</td><td>Image</td><td>Text-to-image: a text encoder conditions a diffusion model (or autoregressive transformer) to generate images matching the prompt.</td></tr>
+<tr><td><strong>GPT-4V / LLaVA</strong></td><td>Image + Text</td><td>Text</td><td>Vision-language: a vision encoder (ViT or CLIP) feeds image embeddings into a language model via a projection layer. The LM then reasons about both the image and the text prompt jointly.</td></tr>
+<tr><td><strong>Whisper / SpeechT5</strong></td><td>Audio</td><td>Text / Audio</td><td>Speech-text: encoder-decoder transformers trained on large-scale speech data for transcription, translation, or synthesis.</td></tr>
+</tbody>
+</table>
+
+<div class="info-box">
+<strong>Engineering pattern — the "projector" bridge:</strong> Most modern multi-modal models follow the same recipe: use a pretrained, frozen encoder for modality A (e.g., CLIP vision encoder for images), train a small "projector" (1-2 linear layers or a tiny transformer) that maps encoder outputs into the embedding space of a pretrained LLM, and then fine-tune the LLM (or just the projector) on multi-modal data. This avoids training a massive model from scratch and lets you leverage existing unimodal foundation models.
+</div>
+
 <h3>36.4 Responsible Generative AI</h3>
 
 <ul>
@@ -4936,6 +5301,10 @@ $$p_\theta(x_{t-1} | x_t) = \mathcal{N}(x_{t-1}; \mu_\theta(x_t, t), \Sigma_\the
 <li><strong>Harmful content:</strong> Models can generate toxic, biased, or dangerous outputs. Safety filters and RLHF help mitigate.</li>
 <li><strong>Memorization:</strong> Models may reproduce training data. Membership inference attacks can detect this.</li>
 </ul>
+
+<div class="tip-box">
+<strong>Further Reading:</strong> For generative model theory, see "Deep Learning" (Goodfellow, Bengio, Courville) Chapter 20. For diffusion models specifically, read "Denoising Diffusion Probabilistic Models" (Ho et al., 2020) and "High-Resolution Image Synthesis with Latent Diffusion Models" (Rombach et al., 2022). For responsible generative AI, see the "Partnership on AI" guidelines and the "Stanford CRFM Foundation Model Transparency Report".
+</div>
 
 <div class="page-break"></div>
 
@@ -5064,7 +5433,7 @@ $$p_\theta(x_{t-1} | x_t) = \mathcal{N}(x_{t-1}; \mu_\theta(x_t, t), \Sigma_\the
 </tbody>
 </table>
 
-<h3>38.3 Global Explanation Methods</h3>
+<h3>38.3 Global Explanation Methods <span class="label label-intermediate">Intermediate</span></h3>
 
 <h4>38.3.1 Permutation Feature Importance</h4>
 
@@ -5126,7 +5495,7 @@ PartialDependenceDisplay.from_estimator(
 <strong>PDP vs. ICE vs. ALE — when to use each.</strong> <strong>PDP</strong> shows the average effect and is the most common, but it hides heterogeneous effects (where a feature helps some predictions and hurts others). <strong>ICE</strong> (Individual Conditional Expectation) plots one line per data point, revealing these heterogeneous relationships — if ICE curves cross or diverge, the feature has interaction effects. <strong>ALE</strong> is the unbiased replacement for PDP when features are correlated; it should be your default choice. As a rule: start with ALE for global feature effects, overlay ICE when you suspect interactions, and use PDP only when features are known to be independent.
 </div>
 
-<h3>38.4 SHAP Values</h3>
+<h3>38.4 SHAP Values <span class="label label-advanced">Advanced</span></h3>
 
 <p>SHAP (SHapley Additive exPlanations) is currently the most widely used local explanation method in both research and industry. It is rooted in cooperative game theory: the Shapley value from economics fairly distributes a coalition's payout among its players. In the ML analogy, the "payout" is the model's prediction for a specific input, and the "players" are the input features. The Shapley value $\phi_i$ of feature $i$ is its average marginal contribution across all possible feature coalitions:</p>
 
@@ -5869,6 +6238,41 @@ resource "aws_sagemaker_endpoint" "churn_model_endpoint" {
 </tbody>
 </table>
 
+<h3>43.3 Feature Stores</h3>
+
+<p>A <strong>feature store</strong> (e.g., Feast, Tecton, SageMaker Feature Store) is a centralized repository for feature definitions, transformations, and serving. It solves the problems of feature duplication and training-serving skew — two issues that become severe as an ML team grows past a few models:</p>
+
+<ul>
+<li><strong>Online serving:</strong> Low-latency feature lookups for inference (typically via Redis, DynamoDB, or Cassandra)</li>
+<li><strong>Offline serving:</strong> Point-in-time correct feature retrieval for training (typically via Parquet in S3 or BigQuery)</li>
+<li><strong>Feature registry:</strong> Versioned, documented feature definitions with metadata (owner, freshness, dependencies)</li>
+<li><strong>Training-serving consistency:</strong> The same transformation logic is applied in both paths, preventing silent skew</li>
+</ul>
+
+<div class="warn-box">
+<strong>Rule of thumb:</strong> If your team has more than 50 features or more than 3 ML models sharing features, invest in a feature store. Before that threshold, a well-structured feature view in your data warehouse is usually sufficient and avoids the operational overhead of running another service.
+</div>
+
+<h3>43.4 Cloud Cost Optimization</h3>
+
+<p>ML cloud costs can grow unpredictably — a single training run on an A100 can cost hundreds of dollars, and serving costs scale with traffic. Key optimization strategies:</p>
+
+<table>
+<caption data-label="Table 43-2">Cloud Cost Optimization Strategies</caption>
+<thead><tr><th>Area</th><th>Strategy</th><th>Typical Savings</th></tr></thead>
+<tbody>
+<tr><td><strong>Compute (training)</strong></td><td>Use preemptible/spot instances for non-critical training; right-size GPU types (A100 vs T4 vs L4); implement automatic spot interruption handling with checkpoint-resume</td><td>50–70% vs on-demand</td></tr>
+<tr><td><strong>Compute (serving)</strong></td><td>Use autoscaling with target utilization of 60–80%; batch requests where latency allows; consider serverless (Lambda, Cloud Run) for low-traffic; compress models (see Ch. 35.4)</td><td>30–60%</td></tr>
+<tr><td><strong>Storage</strong></td><td>Use lifecycle policies to tier data (hot → cold → archive); delete stale experiment artifacts; compress datasets (Parquet with Zstd)</td><td>40–80% on storage</td></tr>
+<tr><td><strong>Data transfer</strong></td><td>Keep training data and compute in the same region; use VPC endpoints instead of NAT gateways; cache frequently-read datasets</td><td>20–50% on network</td></tr>
+<tr><td><strong>Experimentation</strong></td><td>Use Hyperband/early stopping to kill unpromising runs; log only essential metrics and artifacts; set budget alerts per experiment</td><td>30–50% on experiment costs</td></tr>
+</tbody>
+</table>
+
+<div class="tip-box">
+<strong>Further Reading:</strong> For cost management, see the AWS Well-Architected Framework "Cost Optimization" pillar and Google Cloud's "Cost Optimization for ML" guide. For feature stores, see the Feast documentation (feast.dev) and "Feature Stores: A Key Component of the ML Stack" (Hopsworks blog).
+</div>
+
 <div class="page-break"></div>
 
 <h2 id="ch44">Chapter 44: Monitoring, Drift, Retraining, and Incident Response</h2>
@@ -6003,6 +6407,47 @@ class ProxyMetricMonitor:
 <li><strong>Fix:</strong> Correct issue, retrain if needed</li>
 <li><strong>Document:</strong> Post-mortem, update runbooks</li>
 </ol>
+
+<h3>44.4 A/B Testing, Shadow, and Canary Deployments</h3>
+
+<p>Deploying a new model version is risky — it might perform worse on a subset of users, introduce new failure modes, or silently degrade. Three deployment patterns mitigate these risks:</p>
+
+<table>
+<caption data-label="Table 44-4">Deployment Strategies Compared</caption>
+<thead><tr><th>Strategy</th><th>How It Works</th><th>Risk Level</th><th>When to Use</th></tr></thead>
+<tbody>
+<tr><td><strong>Shadow (dark launch)</strong></td><td>New model runs in parallel with production but its predictions are logged, not served to users. Compare offline.</td><td>Lowest — no user impact</td><td>Validating a new model family; testing inference latency; gathering comparison data without risk</td></tr>
+<tr><td><strong>Canary</strong></td><td>Route a small % of traffic (e.g., 5%) to the new model, gradually ramp up while monitoring metrics. Roll back instantly if metrics degrade.</td><td>Low — limited blast radius</td><td>Most common path to production for model updates; required for any high-traffic serving endpoint</td></tr>
+<tr><td><strong>A/B Test</strong></td><td>Split users into control (old model) and treatment (new model), measure a business metric (revenue, engagement, accuracy) over a fixed period. Requires statistical significance testing.</td><td>Medium — business impact</td><td>Validating that a model improvement translates to a business outcome; comparing multiple model candidates</td></tr>
+</tbody>
+</table>
+
+<div class="warn-box">
+<strong>Common pitfall (A/B testing):</strong> Running an A/B test for too short a duration or without proper sample size calculation leads to unreliable conclusions. Use a power analysis before launching: you need enough traffic to detect the minimum effect size you care about. For a 1% improvement in conversion rate at 80% power and α=0.05, you typically need hundreds of thousands of samples per variant. Tools like Evan's Awesome A/B Tools (evanmiller.org) provide quick sample-size calculators.
+</div>
+
+<pre><code># Minimal A/B test evaluation with a two-proportion z-test
+import numpy as np
+from scipy import stats
+
+def evaluate_ab_test(n_control, conv_control, n_treatment, conv_treatment):
+    """Compare two proportions with a z-test. Returns p-value and conclusion."""
+    p_control = conv_control / n_control
+    p_treatment = conv_treatment / n_treatment
+    p_pooled = (conv_control + conv_treatment) / (n_control + n_treatment)
+    se = np.sqrt(p_pooled * (1 - p_pooled) * (1/n_control + 1/n_treatment))
+    z = (p_treatment - p_control) / se
+    p_value = 2 * (1 - stats.norm.cdf(abs(z)))
+    return {"lift_pct": (p_treatment / p_control - 1) * 100, "p_value": p_value, "significant": p_value < 0.05}
+
+# Example: control: 5000 users, 200 conversions; treatment: 5000 users, 230 conversions
+result = evaluate_ab_test(5000, 200, 5000, 230)
+print(f"Lift: {result['lift_pct']:.1f}%, p={result['p_value']:.3f}, significant={result['significant']}")
+# → Lift: 15.0%, p=0.061, significant=False  (not enough evidence)</code></pre>
+
+<p class="tip-box" style="padding:16px 20px;margin:20px 0;background:var(--green-light);border-radius:var(--radius);border-left:4px solid var(--green);">
+<strong>Production best practice:</strong> For canary deployments, automate the ramp-up with a "metrics dashboard watch" — if any monitoring dimension (latency P99, error rate, prediction drift) crosses a threshold during the canary, roll back automatically. Never require a human to notice the problem and click "rollback" at 3 AM.
+</p>
 
 <div class="page-break"></div>
 
@@ -6516,12 +6961,19 @@ git stash / git stash pop             # Temporarily save changes</code></pre>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  /* ---- Build sidebar TOC ---- */
+  const main = document.querySelector(".main-content");
   const nav = document.getElementById("sidebar-nav");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  const menuToggle = document.getElementById("menu-toggle");
+  const progressBar = document.getElementById("progress-bar");
+  const themeToggle = document.getElementById("theme-toggle");
+  const backToTop = document.getElementById("back-to-top");
+
+  /* ---- Build sidebar TOC ---- */
   const headings = document.querySelectorAll(".main-content h1[id], .main-content h2[id]");
   let currentPart = null;
   const parts = [];
-
   headings.forEach(h => {
     if (h.tagName === "H1") {
       currentPart = { label: h.textContent.trim(), id: h.id, children: [] };
@@ -6530,7 +6982,6 @@ document.addEventListener("DOMContentLoaded", () => {
       currentPart.children.push({ label: h.textContent.trim(), id: h.id });
     }
   });
-
   nav.innerHTML = parts.map(part => `
     <div class="toc-part"><a href="#${part.id}">${part.label}</a></div>
     ${part.children.map(ch => `<a href="#${ch.id}" class="toc-l1">${ch.label}</a>`).join("")}
@@ -6556,15 +7007,14 @@ document.addEventListener("DOMContentLoaded", () => {
   updateActive();
 
   /* ---- Progress bar ---- */
-  const progressBar = document.getElementById("progress-bar");
   let ticking = false;
   const onScroll = () => {
     if (!ticking) {
       requestAnimationFrame(() => {
         const scrollTop = window.scrollY;
         const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-        progressBar.style.width = Math.min(progress, 100) + "%";
+        progressBar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + "%";
+        backToTop.classList.toggle("visible", scrollTop > 400);
         ticking = false;
       });
       ticking = true;
@@ -6574,7 +7024,6 @@ document.addEventListener("DOMContentLoaded", () => {
   onScroll();
 
   /* ---- Dark mode toggle ---- */
-  const themeToggle = document.getElementById("theme-toggle");
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   const stored = localStorage.getItem("theme");
   if (stored === "dark" || (!stored && prefersDark)) {
@@ -6585,6 +7034,37 @@ document.addEventListener("DOMContentLoaded", () => {
     const isDark = document.documentElement.classList.toggle("dark");
     themeToggle.textContent = isDark ? "☀️" : "🌙";
     localStorage.setItem("theme", isDark ? "dark" : "light");
+  });
+
+  /* ---- Back to top ---- */
+  backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+
+  /* ---- Font size controls ---- */
+  const fontBtns = document.querySelectorAll("#font-controls button");
+  fontBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.documentElement.style.setProperty("--font-base", btn.dataset.size + "px");
+      fontBtns.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      localStorage.setItem("fontSize", btn.dataset.size);
+    });
+  });
+  const savedSize = localStorage.getItem("fontSize");
+  if (savedSize) {
+    document.documentElement.style.setProperty("--font-base", savedSize + "px");
+    fontBtns.forEach(b => {
+      b.classList.toggle("active", b.dataset.size === savedSize);
+    });
+  }
+
+  /* ---- Heading anchor links ---- */
+  document.querySelectorAll(".main-content h1[id], .main-content h2[id], .main-content h3[id], .main-content h4[id]").forEach(h => {
+    const a = document.createElement("a");
+    a.className = "anchor-link";
+    a.href = "#" + h.id;
+    a.textContent = "#";
+    a.setAttribute("aria-label", "Permalink to this section");
+    h.appendChild(a);
   });
 
   /* ---- Copy buttons ---- */
@@ -6600,33 +7080,71 @@ document.addEventListener("DOMContentLoaded", () => {
         await navigator.clipboard.writeText(code.textContent);
         btn.textContent = "Copied!";
         btn.classList.add("copied");
-        setTimeout(() => {
-          btn.textContent = "Copy";
-          btn.classList.remove("copied");
-        }, 2000);
+        setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 2000);
       } catch { btn.textContent = "Failed"; }
     });
   });
 
+  /* ---- Search ---- */
+  const fuseScript = document.querySelector('script[src*="fuse.js"]');
+  if (fuseScript && typeof Fuse !== "undefined") {
+    const searchInput = document.getElementById("search-input");
+    const searchResults = document.getElementById("search-results");
+    const allContent = [];
+
+    document.querySelectorAll(".main-content h1[id], .main-content h2[id], .main-content h3[id], .main-content p, .main-content li").forEach(el => {
+      const text = el.textContent.trim();
+      if (text.length > 20) {
+        const heading = el.closest("h1,h2") || (el.tagName === "H1" || el.tagName === "H2" ? el : null);
+        const section = heading ? heading.textContent.trim() : "";
+        let id = "";
+        if (el.id) id = el.id;
+        else {
+          const parent = el.closest("[id]");
+          if (parent) id = parent.id;
+        }
+        allContent.push({ text, section, id, el });
+      }
+    });
+
+    const fuse = new Fuse(allContent, {
+      keys: ["text", "section"],
+      threshold: 0.4,
+      minMatchCharLength: 2,
+    });
+
+    searchInput.addEventListener("input", () => {
+      const query = searchInput.value.trim();
+      if (!query) { searchResults.innerHTML = ""; searchResults.classList.remove("has-results"); return; }
+      const results = fuse.search(query).slice(0, 20);
+      if (results.length === 0) {
+        searchResults.innerHTML = '<a style="color:var(--text-secondary);font-size:12px;padding:8px;">No matches found</a>';
+      } else {
+        searchResults.innerHTML = results.map(r => {
+          const item = r.item;
+          const display = item.text.length > 80 ? item.text.slice(0, 80) + "…" : item.text;
+          const href = item.id ? "#" + item.id : "#";
+          return `<a href="${href}">${item.section ? "<small>" + item.section + "</small> — " : ""}${display}</a>`;
+        }).join("");
+      }
+      searchResults.classList.add("has-results");
+    });
+  }
+
+  /* ---- Quiz reveal buttons ---- */
+  document.querySelectorAll(".quiz-reveal").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const answers = btn.parentElement.querySelectorAll(".quiz-answer");
+      answers.forEach(a => a.classList.toggle("show"));
+    });
+  });
+
   /* ---- Mobile menu ---- */
-  const sidebar = document.getElementById("sidebar");
-  const overlay = document.getElementById("sidebar-overlay");
-  const menuToggle = document.getElementById("menu-toggle");
-  const openMenu = () => {
-    sidebar.classList.add("open");
-    overlay.classList.add("open");
-    document.body.style.overflow = "hidden";
-  };
-  const closeMenu = () => {
-    sidebar.classList.remove("open");
-    overlay.classList.remove("open");
-    document.body.style.overflow = "";
-  };
+  const openMenu = () => { sidebar.classList.add("open"); overlay.classList.add("open"); document.body.style.overflow = "hidden"; };
+  const closeMenu = () => { sidebar.classList.remove("open"); overlay.classList.remove("open"); document.body.style.overflow = ""; };
   menuToggle.addEventListener("click", openMenu);
   overlay.addEventListener("click", closeMenu);
-  sidebar.querySelectorAll("a").forEach(a => {
-    a.addEventListener("click", closeMenu);
-  });
+  sidebar.querySelectorAll("a").forEach(a => a.addEventListener("click", closeMenu));
 });
 </script>
 </body>
